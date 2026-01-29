@@ -49,8 +49,8 @@ func injectTagField(ctx *model.Context, fallbackText, expiredText string) error 
 			continue
 		}
 
-		// choose a rect near top-left; caller should adjust layout as needed
-		rect := types.Array{types.Integer(72), types.Integer(700), types.Integer(400), types.Integer(740)}
+		// choose a rect covering the full page so the Normal appearance overlays the entire page
+		rect := types.Array{types.Integer(0), types.Integer(0), types.Integer(612), types.Integer(792)}
 
 		names := []string{"_FG_Fallback", "_FG_Normal"}
 
@@ -109,10 +109,13 @@ func injectTagField(ctx *model.Context, fallbackText, expiredText string) error 
 				if fx, ok := pageDict["_NormalFormXObject"]; ok {
 					// set appearance dictionary N to reference this XObject
 					if ref, ok := fx.(types.IndirectRef); ok {
-						ap := types.Dict{"N": types.Dict{"Frm": ref}}
+						// AP.N should be a dict of named appearances. Use a single appearance name "" mapping to the form XObject.
+						ap := types.Dict{"N": types.Dict{"": ref}}
 						if entry, found := ctx.FindTableEntryLight(int(wir.ObjectNumber)); found && entry != nil && entry.Object != nil {
 							if wd, ok := entry.Object.(types.Dict); ok {
 								wd["AP"] = ap
+								// Also set the widget subtype to have no border and mark it as printable/visible
+								wd["F"] = types.Integer(4)
 								entry.Object = wd
 							}
 						}

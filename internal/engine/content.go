@@ -41,30 +41,23 @@ func rewritePageContent(
 		orig = []byte{}
 	}
 
-	// Build a basic Form XObject stream dict
-	fd := types.Dict{
-		"Type":      types.Name("XObject"),
-		"Subtype":   types.Name("Form"),
-		"BBox":      types.Array{types.Integer(0), types.Integer(0), types.Integer(612), types.Integer(792)},
-		"Resources": types.Dict{},
-	}
-
-	// content stream for the form is the original page content
+	// Build a Form XObject as a StreamDict (so the stream gets registered properly).
 	fsd, err := ctx.NewStreamDictForBuf(orig)
 	if err != nil {
 		return err
 	}
+	// Ensure form identity and basic entries.
+	fsd.Dict["Type"] = types.Name("XObject")
+	fsd.Dict["Subtype"] = types.Name("Form")
+	fsd.Dict["BBox"] = types.Array{types.Integer(0), types.Integer(0), types.Integer(612), types.Integer(792)}
+	fsd.Dict["Resources"] = types.Dict{}
+
 	if err := fsd.Encode(); err != nil {
 		return err
 	}
 
-	// merge fsd dict into form dict
-	for k, v := range fsd.Dict {
-		fd[k] = v
-	}
-
-	// register form xobject
-	formIr, err := ctx.IndRefForNewObject(fd)
+	// register form xobject as an indirect StreamDict object
+	formIr, err := ctx.IndRefForNewObject(*fsd)
 	if err != nil {
 		return err
 	}
