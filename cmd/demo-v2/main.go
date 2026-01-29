@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
-	in := "cg.pdf"
-	out := "m2_protected.pdf"
+	in := "./cg.pdf"
+	out := "./m2_protected.pdf"
 
 	/* ctx, err := api.ReadContextFile(in)
 	if err != nil {

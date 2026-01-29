@@ -63,7 +63,7 @@ func addScreen(ctx *model.Context, page types.Dict, p int) error {
 	if err := ap.Encode(); err != nil {
 		panic(err)
 	}
-	apRef, err := ctx.IndRefForNewObject(ap)
+	apRef, err := ctx.IndRefForNewObject(*ap)
 	if err != nil {
 		panic(err)
 	}
@@ -102,19 +102,19 @@ func addScreen(ctx *model.Context, page types.Dict, p int) error {
 
 func screenAppearance(ctx *model.Context) *types.StreamDict {
 	content := `
-q
-1 1 1 rg
-0 0 10000 10000 re
-f
-
-0 0 0 rg
-BT
-/F1 36 Tf
-200 500 Td
-(SCREEN FALLBACK TEST) Tj
-ET
-Q
-`
+	q
+	1 1 1 rg
+	0 0 10000 10000 re
+	f
+	
+	0 0 0 rg
+	BT
+	/F1 36 Tf
+	200 500 Td
+	(FALLBACK SCREEN) Tj
+	ET
+	Q
+	`
 
 	sd, err := ctx.NewStreamDictForBuf([]byte(content))
 	if err != nil {
@@ -124,6 +124,12 @@ Q
 	sd.Dict = types.Dict{
 		"Type":    types.Name("XObject"),
 		"Subtype": types.Name("Form"),
+		// ⭐ 关键：隔离透明组
+		"Group": types.Dict{
+			"S":  types.Name("Transparency"),
+			"I":  types.Boolean(true), // Isolated
+			"CS": types.Name("DeviceRGB"),
+		},
 		"BBox": types.Array{
 			types.Float(0),
 			types.Float(0),
