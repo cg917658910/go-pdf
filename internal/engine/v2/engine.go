@@ -49,16 +49,21 @@ func Run(opt Options) error {
 			fmt.Printf("extract page content as XObject for page %d: %v\n", p, err)
 			return err
 		}
-		// 2.重写页面 Contents（只画 fallback）
+		// 2.重写页面 Contents（只画 fallback），然后在末尾追加 OCG 包裹的 Do NormalContent
 		err = setFallbackContent(ctx, pageDict)
 		if err != nil {
 			fmt.Printf("set fallback content for page %d: %v\n", p, err)
 			return err
 		}
 		// 3.把 NormalContent XObject 加回页面 Resources
-		attachXObjectToPage(pageDict, pxd)
-		// 4.创建隐藏 Widget，AP 里 Do NormalContent
-		createUnlockWidget(ctx, pageDict, p, pxd)
+		attachXObjectToPage(pageDict, pxd, normalOCG)
+		// 4.在 Page Contents 末尾追加一个流，执行 /NormalContent Do 并由 OCG 控制
+		if err := appendDoNormalContent(ctx, pageDict); err != nil {
+			fmt.Printf("append Do NormalContent for page %d: %v\n", p, err)
+			return err
+		}
+		// 5.创建隐藏 Widget，仅用于兼容或备用（不作显示切换）
+		//createUnlockWidget(ctx, pageDict, p, pxd)
 		/* if err := addFallbackWidget(ctx, pageDict, p, fallbackOCG, opt.Watermark); err != nil {
 			fmt.Printf("add fallback widget to page %d: %v\n", p, err)
 			return err
@@ -66,8 +71,8 @@ func Run(opt Options) error {
 	}
 
 	// 3. 注入 JS（只隐藏 Widget）
-	//injectOpenActionJS(ctx, opt.StartTime, opt.EndTime)
-	injectTimeJS(ctx, opt.StartTime, opt.EndTime)
+	injectOpenActionJS(ctx, opt.StartTime, opt.EndTime)
+	//injectTimeJS(ctx, opt.StartTime, opt.EndTime)
 	// 4. 权限限制
 	if opt.DisablePrint || opt.DisableCopy {
 		//restrictPermissions(ctx, opt.DisablePrint, opt.DisableCopy)

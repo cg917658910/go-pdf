@@ -47,12 +47,22 @@ func extractPageContentAsXObject(
 
 	formRef, err := ctx.IndRefForNewObject(form)
 
+	// 将 Page 内容替换为仅绘制 fallback
+	// 并在 Page Contents 末尾追加一个流：
+	// q
+	// /OC /OCG_Normal BDC
+	// /NormalContent Do
+	// EMC
+	// Q
+	// 这样 OCG 控制是否执行 Do，页面内容保持被 OCG 包裹但不被 JS 直接修改。
+
 	return *formRef, err
 }
 
 func attachXObjectToPage(
 	page types.Dict,
 	xobj types.IndirectRef,
+	ocg types.IndirectRef,
 ) {
 
 	res := page["Resources"].(types.Dict)
@@ -64,6 +74,14 @@ func attachXObjectToPage(
 	}
 
 	xobjs["NormalContent"] = xobj
+
+	// Ensure OCG reference is available in page resource Properties mapping
+	if props, ok := res["Properties"].(types.Dict); ok {
+		props["OCG_Normal"] = ocg
+		res["Properties"] = props
+	} else {
+		res["Properties"] = types.Dict{"OCG_Normal": ocg}
+	}
 }
 
 func setFallbackContent(ctx *model.Context, page types.Dict) error {

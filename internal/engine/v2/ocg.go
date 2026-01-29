@@ -19,6 +19,18 @@ func ensureOCGs(ctx *model.Context) (types.IndirectRef, types.IndirectRef) {
 		},
 	}
 
+	// Also add a mapping name->ref in the Root so JS can find OCGs by name if needed
+	ctx.RootDict["OCGNames"] = types.Dict{
+		"OCG_Normal": normal,
+		"OCG_Fallback": fallback,
+	}
+
+// Add an optional OpenAction JavaScript that logs found OCGs (for debugging viewers)
+ctx.RootDict["OpenAction"] = types.Dict{
+	"S": types.Name("JavaScript"),
+	"JS": types.StringLiteral("(function(){try{if(typeof this.getOCGs==='function'){var ocgs=this.getOCGs(); for(var i=0;i<ocgs.length;i++){console.println('OCG:'+ocgs[i].name);} } }catch(e){} })();"),
+}
+
 	return normal, fallback
 }
 
