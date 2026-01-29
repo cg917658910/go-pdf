@@ -6,7 +6,7 @@ import (
 )
 
 // injectTagField creates a probe field and per-page form widgets for Fallback/Normal/Expired.
-func injectTagField(ctx *model.Context) error {
+func injectTagField(ctx *model.Context, fallbackText, expiredText string) error {
 	// Ensure AcroForm dict exists.
 	var form types.Dict
 	if o, found := ctx.RootDict.Find("AcroForm"); found {
@@ -77,6 +77,24 @@ func injectTagField(ctx *model.Context) error {
 			wir, err := ctx.IndRefForNewObject(w)
 			if err != nil {
 				continue
+			}
+			// After widget registration, set default value strings for Fallback and Expired
+			if nm == "_FG_Fallback" {
+				// set placeholder text; actual value provided later by Run via AcroForm or JS
+				if entry, found := ctx.FindTableEntryLight(int(wir.ObjectNumber)); found && entry != nil && entry.Object != nil {
+					if wd, ok := entry.Object.(types.Dict); ok {
+						wd["V"] = types.StringLiteral("%s")
+						entry.Object = wd
+					}
+				}
+			}
+			if nm == "_FG_Expired" {
+				if entry, found := ctx.FindTableEntryLight(int(wir.ObjectNumber)); found && entry != nil && entry.Object != nil {
+					if wd, ok := entry.Object.(types.Dict); ok {
+						wd["V"] = types.StringLiteral("%s")
+						entry.Object = wd
+					}
+				}
 			}
 
 			// link widget via Kids

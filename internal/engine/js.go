@@ -14,6 +14,7 @@ func injectJS(ctx *model.Context, start, end time.Time, fallbackText, expiredTex
 	js := fmt.Sprintf(`(function(){
  try{
   var now = new Date();
+  app.alert("Current date/time: " + now.toUTCString());
   // normalize to epoch ms for TZ-agnostic comparison
   var nowMs = now.getTime();
   var hasGetField = (typeof this.getField === "function");
@@ -23,6 +24,7 @@ func injectJS(ctx *model.Context, start, end time.Time, fallbackText, expiredTex
 
   var start=new Date("%s");
   var end=new Date("%s");
+  app.alert("Start date/time: " + start.toUTCString() + "\nEnd date/time: " + end.toUTCString());
   var startMs = start.getTime();
   var endMs = end.getTime();
   try{

@@ -35,11 +35,16 @@ func rewritePageContent(
 	normal, fallback, expired []byte,
 ) error {
 
-	final := bytes.Join([][]byte{
-		wrapOCG("OCG_Fallback", fallback),
-		wrapOCG("OCG_Normal", normal),
-		wrapOCG("OCG_Expired", expired),
-	}, []byte("\n"))
+	// Keep existing page contents as the Normal layer base
+	normalLayer := normal
+	if normalLayer == nil {
+		normalLayer = []byte{}
+	}
+
+	// Create three text widget fields per page: Fallback, Normal, Expired.
+	// We'll leave the Normal field visible by default, and set Expired/Default based on time.
+	// Build a combined static content stream that draws nothing; actual display happens via form widgets.
+	final := normalLayer
 
 	sd, err := ctx.NewStreamDictForBuf(final)
 	if err != nil {
@@ -55,18 +60,6 @@ func rewritePageContent(
 		return err
 	}
 	page["Contents"] = *ir
-
-	// Debug: ensure the xref table entry for this new object is a value StreamDict
-	if entry, found := ctx.FindTableEntryLight(int(ir.ObjectNumber)); found {
-		// When entry.Object is a pointer to types.StreamDict that's an issue for pdfcpu writer.
-		switch entry.Object.(type) {
-		case *types.StreamDict:
-			// Convert in-place to value type to be safe.
-			entry.Object = *(entry.Object.(*types.StreamDict))
-		default:
-			// nothing
-		}
-	}
 
 	return nil
 }

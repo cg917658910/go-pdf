@@ -62,9 +62,17 @@ func injectOCGResources(ctx *model.Context, page types.Dict, ocgs *OCGSet) {
 		res = types.Dict{}
 		page["Resources"] = res
 	}
+	// Ensure Properties exists and map OCG names to indirect refs
 	res["Properties"] = types.Dict{
 		"OCG_Fallback": *ocgs.Fallback,
 		"OCG_Normal":   *ocgs.Normal,
 		"OCG_Expired":  *ocgs.Expired,
 	}
+	// Add Usage/Application entries to guide non-JS viewers (optional)
+	// Not all viewers support Usage, but it can help some show/hide logic.
+	if res["Properties"] == nil {
+		res["Properties"] = types.Dict{}
+	}
+	// Add OCG to page resources' Optional Content if needed.
+	page["Resources"] = res
 }

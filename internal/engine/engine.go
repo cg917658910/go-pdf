@@ -35,6 +35,25 @@ func Run(opts Options) error {
 		return err
 	}
 	injectOCProperties(ctx, ocgs)
+	// Set default visible OCG for viewers without JavaScript to reflect current time.
+	// If current time outside [Start, End], show Expired; else show Normal.
+	{
+		if ctx.RootDict == nil {
+			ctx.RootDict = types.Dict{}
+		}
+		ocp := ctx.RootDict["OCProperties"]
+		if od, ok := ocp.(types.Dict); ok {
+			if dd, ok := od["D"].(types.Dict); ok {
+				if time.Now().Before(opts.Start) || time.Now().After(opts.End) {
+					dd["ON"] = types.Array{*ocgs.Expired}
+				} else {
+					dd["ON"] = types.Array{*ocgs.Normal}
+				}
+				od["D"] = dd
+				ctx.RootDict["OCProperties"] = od
+			}
+		}
+	}
 
 	// 2. Pages
 	for p := 1; p <= ctx.PageCount; p++ {
@@ -61,12 +80,12 @@ func Run(opts Options) error {
 	}
 
 	// 3. Form probe
-	if err := injectTagField(ctx); err != nil {
+	if err := injectTagField(ctx, opts.Fallback, opts.Expired); err != nil {
 		return err
 	}
 
 	// 4. JavaScript
-	injectJS(ctx, opts.Start, opts.End)
+	injectJS(ctx, opts.Start, opts.End, opts.Fallback, opts.Expired)
 
 	// 5. Permissions
 	if opts.NoPrint || opts.NoCopy {
