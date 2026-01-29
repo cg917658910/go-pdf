@@ -9,7 +9,6 @@ import (
 type OCGSet struct {
 	Fallback *types.IndirectRef
 	Normal   *types.IndirectRef
-	Expired  *types.IndirectRef
 }
 
 func createOCG(ctx *model.Context, name string) *types.IndirectRef {
@@ -28,7 +27,6 @@ func registerOCGs(ctx *model.Context) (*OCGSet, error) {
 	return &OCGSet{
 		Fallback: createOCG(ctx, "OCG_Fallback"),
 		Normal:   createOCG(ctx, "OCG_Normal"),
-		Expired:  createOCG(ctx, "OCG_Expired"),
 	}, nil
 }
 
@@ -37,20 +35,17 @@ func injectOCProperties(ctx *model.Context, ocgs *OCGSet) {
 		"OCGs": types.Array{
 			*ocgs.Fallback,
 			*ocgs.Normal,
-			*ocgs.Expired,
 		},
 		"D": types.Dict{
 			"Order": types.Array{
 				*ocgs.Fallback,
 				*ocgs.Normal,
-				*ocgs.Expired,
 			},
 			"ON": types.Array{
 				*ocgs.Fallback,
 			},
 			"OFF": types.Array{
 				*ocgs.Normal,
-				*ocgs.Expired,
 			},
 		},
 	}
@@ -66,7 +61,6 @@ func injectOCGResources(ctx *model.Context, page types.Dict, ocgs *OCGSet) {
 	res["Properties"] = types.Dict{
 		"OCG_Fallback": *ocgs.Fallback,
 		"OCG_Normal":   *ocgs.Normal,
-		"OCG_Expired":  *ocgs.Expired,
 	}
 	// Add Usage/Application entries to guide non-JS viewers (optional)
 	// Not all viewers support Usage, but it can help some show/hide logic.

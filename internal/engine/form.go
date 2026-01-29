@@ -52,7 +52,7 @@ func injectTagField(ctx *model.Context, fallbackText, expiredText string) error 
 		// choose a rect near top-left; caller should adjust layout as needed
 		rect := types.Array{types.Integer(72), types.Integer(700), types.Integer(400), types.Integer(740)}
 
-		names := []string{"_FG_Fallback", "_FG_Normal", "_FG_Expired"}
+		names := []string{"_FG_Fallback", "_FG_Normal"}
 
 		// Create fields and widgets
 		for _, nm := range names {
@@ -79,11 +79,19 @@ func injectTagField(ctx *model.Context, fallbackText, expiredText string) error 
 				continue
 			}
 			// After widget registration, set default value strings for Fallback and Expired
+			// set default field values from args
 			if nm == "_FG_Fallback" {
-				// set placeholder text; actual value provided later by Run via AcroForm or JS
 				if entry, found := ctx.FindTableEntryLight(int(wir.ObjectNumber)); found && entry != nil && entry.Object != nil {
 					if wd, ok := entry.Object.(types.Dict); ok {
-						wd["V"] = types.StringLiteral("%s")
+						wd["V"] = types.StringLiteral(fallbackText)
+						entry.Object = wd
+					}
+				}
+			}
+			if nm == "_FG_Fallback" {
+				if entry, found := ctx.FindTableEntryLight(int(wir.ObjectNumber)); found && entry != nil && entry.Object != nil {
+					if wd, ok := entry.Object.(types.Dict); ok {
+						wd["V"] = types.StringLiteral(fallbackText)
 						entry.Object = wd
 					}
 				}
@@ -91,8 +99,23 @@ func injectTagField(ctx *model.Context, fallbackText, expiredText string) error 
 			if nm == "_FG_Expired" {
 				if entry, found := ctx.FindTableEntryLight(int(wir.ObjectNumber)); found && entry != nil && entry.Object != nil {
 					if wd, ok := entry.Object.(types.Dict); ok {
-						wd["V"] = types.StringLiteral("%s")
+						wd["V"] = types.StringLiteral(expiredText)
 						entry.Object = wd
+					}
+				}
+			}
+			// Attach AP Normal form if available on page
+			if nm == "_FG_Normal" {
+				if fx, ok := pageDict["_NormalFormXObject"]; ok {
+					// set appearance dictionary N to reference this XObject
+					if ref, ok := fx.(types.IndirectRef); ok {
+						ap := types.Dict{"N": types.Dict{"Frm": ref}}
+						if entry, found := ctx.FindTableEntryLight(int(wir.ObjectNumber)); found && entry != nil && entry.Object != nil {
+							if wd, ok := entry.Object.(types.Dict); ok {
+								wd["AP"] = ap
+								entry.Object = wd
+							}
+						}
 					}
 				}
 			}

@@ -35,23 +35,15 @@ func Run(opts Options) error {
 		return err
 	}
 	injectOCProperties(ctx, ocgs)
-	// Set default visible OCG for viewers without JavaScript to reflect current time.
-	// If current time outside [Start, End], show Expired; else show Normal.
-	{
-		if ctx.RootDict == nil {
-			ctx.RootDict = types.Dict{}
-		}
-		ocp := ctx.RootDict["OCProperties"]
-		if od, ok := ocp.(types.Dict); ok {
-			if dd, ok := od["D"].(types.Dict); ok {
-				if time.Now().Before(opts.Start) || time.Now().After(opts.End) {
-					dd["ON"] = types.Array{*ocgs.Expired}
-				} else {
-					dd["ON"] = types.Array{*ocgs.Normal}
-				}
-				od["D"] = dd
-				ctx.RootDict["OCProperties"] = od
-			}
+	// Set default visible OCG for viewers without JavaScript to Fallback (safe default).
+	if ctx.RootDict == nil {
+		ctx.RootDict = types.Dict{}
+	}
+	if od, ok := ctx.RootDict["OCProperties"].(types.Dict); ok {
+		if dd, ok := od["D"].(types.Dict); ok {
+			dd["ON"] = types.Array{*ocgs.Fallback}
+			od["D"] = dd
+			ctx.RootDict["OCProperties"] = od
 		}
 	}
 
