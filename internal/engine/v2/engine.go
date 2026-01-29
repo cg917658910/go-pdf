@@ -35,7 +35,7 @@ func Run(opt Options) error {
 	// 2. 每一页加 Fallback Widget（遮罩）
 	// 2. Pages
 	for p := 1; p <= ctx.PageCount; p++ {
-		pageDict, _, _, err := ctx.PageDict(p, false)
+		pageDict, _, _, err := ctx.PageDict(p, true)
 		if err != nil {
 			fmt.Printf("get page dict for page %d: %v\n", p, err)
 			return err
@@ -67,7 +67,7 @@ func Run(opt Options) error {
 
 	// 3. 注入 JS（只隐藏 Widget）
 	//injectOpenActionJS(ctx, opt.StartTime, opt.EndTime)
-	injectTimeJS(ctx)
+	injectTimeJS(ctx, opt.StartTime, opt.EndTime)
 	// 4. 权限限制
 	if opt.DisablePrint || opt.DisableCopy {
 		//restrictPermissions(ctx, opt.DisablePrint, opt.DisableCopy)

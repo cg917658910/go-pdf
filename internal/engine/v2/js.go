@@ -63,26 +63,30 @@ try{
 	}
 }
 
-func injectTimeJS(ctx *model.Context) {
-	js := `
-(function () {
+func injectTimeJS(ctx *model.Context, start, end time.Time) {
+	js := fmt.Sprintf(`(function () {
   try {
-    var start = new Date("2026-01-28T14:28:00");
-    var end   = new Date("2026-01-30T14:30:00");
+    var start = new Date("%s");
+    var end   = new Date("%s");
     var now   = new Date();
-	if(typeof this.getField !== "function") { app.alert("No getField API"); return; }
-    var f = this.getField("tag_unlock");
-    if (!f) return;
 
-    if (now >= start && now <= end) {
-      f.display = display.visible;
-    } else {
-      f.display = display.hidden;
-      if (now > end) app.alert("Expired");
+    // Toggle AcroForm field visibility if available
+    if (typeof this.getField === "function") {
+      var f = this.getField("tag_unlock");
+      if (f) {
+        try {
+          if (now >= start && now <= end) {
+            f.display = display.visible;
+          } else {
+		   app.alert("Document expired on " + end.toUTCString());
+            f.display = display.hidden;
+          }
+        } catch (e) { }
+      }
     }
   } catch (e) {app.alert("JS error: " + e);}
-})();
-`
+})();`, start.Format(time.RFC3339), end.Format(time.RFC3339))
+
 	iref, err := ctx.IndRefForNewObject(types.Dict{
 		"S":  types.Name("JavaScript"),
 		"JS": types.StringLiteral(js),

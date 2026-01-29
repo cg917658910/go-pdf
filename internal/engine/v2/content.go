@@ -30,7 +30,9 @@ func extractPageContentAsXObject(
 		return types.IndirectRef{}, fmt.Errorf("unsupported contents type")
 	}
 	_, _, inhPAttrs, err := ctx.PageDict(pageNr, true)
-
+	if err != nil {
+		return types.IndirectRef{}, err
+	}
 	// 创建 Form XObject
 	form := types.Dict{
 		"Type":      types.Name("XObject"),
@@ -108,23 +110,33 @@ q
 /NormalContent Do
 Q
 `
+	// Compute inherited MediaBox early to set proper BBox in AP
+	_, _, inhPAttrs, err := ctx.PageDict(pageNr, true)
+	if err != nil {
+		return err
+	}
+
 	apStream, err := ctx.NewStreamDictForBuf([]byte(apContent))
 	if err != nil {
 		return err
 	}
+
+	apStream.Dict = types.Dict{
+		"Type":    types.Name("XObject"),
+		"Subtype": types.Name("Form"),
+		"BBox":    inhPAttrs.MediaBox.Array(),
+		"Resources": types.Dict{
+			"XObject": types.Dict{
+				"NormalContent": normalXObj,
+			},
+		},
+	}
+
 	if err := apStream.Encode(); err != nil {
 		return err
 	}
-	apStream.Dict["Resources"] = types.Dict{
-		"XObject": types.Dict{
-			"NormalContent": normalXObj,
-		},
-	}
+
 	apRef, err := ctx.IndRefForNewObject(*apStream)
-	if err != nil {
-		return err
-	}
-	_, _, inhPAttrs, err := ctx.PageDict(pageNr, true)
 	if err != nil {
 		return err
 	}
