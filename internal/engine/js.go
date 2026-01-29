@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/pdfcpu/pdfcpu/pkg/pdfcpu/model"
@@ -13,6 +14,8 @@ func injectJS(ctx *model.Context, start, end time.Time, fallbackText, expiredTex
 	js := fmt.Sprintf(`(function(){
  try{
   var now = new Date();
+  // normalize to epoch ms for TZ-agnostic comparison
+  var nowMs = now.getTime();
   var hasGetField = (typeof this.getField === "function");
   var hasTag = false;
   try{ hasTag = !!this.getField("tag_probe"); }catch(e){ hasTag = false; }
@@ -20,9 +23,10 @@ func injectJS(ctx *model.Context, start, end time.Time, fallbackText, expiredTex
 
   var start=new Date("%s");
   var end=new Date("%s");
-
+  var startMs = start.getTime();
+  var endMs = end.getTime();
   try{
-    if(now>=start&&now<=end){
+    if(nowMs>=startMs&&nowMs<=endMs){
       try{ this.getField("_FG_Normal").value = ""; }catch(e){}
       try{ this.getField("_FG_Fallback").display = display.hidden; }catch(e){}
       try{ this.getField("_FG_Expired").display = display.hidden; }catch(e){}
