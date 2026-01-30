@@ -18,22 +18,27 @@ func injectOpenActionJS(ctx *model.Context, start, end time.Time) {
     var inRange = (now >= start && now <= end);
     var ocgName = "OCG_Normal";
     try {
+	  //app.alert("JS activated. In range: " + inRange);
+	  if(!inRange){
+		app.alert("Expired document. OCG state will not be changed.");	
+		return;  
+	  }
       if (typeof this.setOCGState === "function") {
-	  app.alert("Setting OCG state for: " + ocgName + " to " + inRange);
-        this.setOCGState(ocgName, true);
+	  //app.alert("Setting OCG state for: " + ocgName + " to " + inRange);
+        this.setOCGState(ocgName, inRange);
       } else if (typeof this.getOCGs === "function") {
-	   app.alert("Getting OCGs to set state for: " + ocgName + " to " + inRange);
+	   //app.alert("Getting OCGs to set state for: " + ocgName + " to " + inRange);
         var ocgs = this.getOCGs();
         for (var i = 0; i < ocgs.length; i++) {
           var o = ocgs[i];
           if (o && o.name === ocgName) {
-		  app.alert("Found OCG: " + ocgName + " setting state to " + inRange);
-            o.state = true;
+		  //app.alert("Found OCG: " + ocgName + " setting state to " + inRange);
+            o.state = inRange;
           }
         }
       }
     } catch (e) {app.alert("Error setting OCG state: " + e); }
-  } catch (e) { }
+    } catch (e) { }
 })();`, start.Format(time.RFC3339), end.Format(time.RFC3339))
 
 	iref, err := ctx.IndRefForNewObject(types.Dict{

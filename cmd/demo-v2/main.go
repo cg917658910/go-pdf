@@ -17,7 +17,7 @@ func main() {
 	} */
 
 	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
-	end := time.Date(2026, 2, 1, 23, 59, 59, 0, time.UTC)
+	end := time.Date(2026, 1, 1, 23, 59, 59, 0, time.UTC)
 	opts := eng.Options{
 		Input:     in,
 		Output:    out,
