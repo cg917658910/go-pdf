@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/pdfcpu/pdfcpu/pkg/api"
@@ -32,7 +33,7 @@ func Run(opt Options) error {
 	maskOCGs := make([]*types.IndirectRef, maskNum)
 	allOCGs := make([]*types.IndirectRef, 0, maskNum+1)
 	for i := 0; i < maskNum; i++ {
-		maskOCGs[i] = createOCG(ctx, fmt.Sprintf("Mask_OCG_%02d", i+1))
+		maskOCGs[i] = createOCG(ctx, fmt.Sprintf("Mask_0_%02d", i+1))
 	}
 	//allOCGs = append(allOCGs, normalOCG)
 	allOCGs = append(allOCGs, maskOCGs...)
@@ -49,6 +50,12 @@ func Run(opt Options) error {
 		}
 		if pageDict == nil {
 			continue
+		}
+		// 提取页面内容
+		normalXObj, err := extractPageContentAsXObject(ctx, pageDict, p)
+		if err != nil {
+			fmt.Printf("extract page content as XObject for page %d: %v\n", p, err)
+			return err
 		}
 		// 绑定 OCG 资源
 		_, _, inhPAttrs, err := ctx.PageDict(p, false)
@@ -67,12 +74,20 @@ func Run(opt Options) error {
 			maskXObjs[i] = mxobj
 		}
 		fallbackXObj, err := buildTextXObject(ctx, mediaBox, opt.Watermark)
-		injectOCGResources(ctx, pageDict, maskXObjs, fallbackXObj, maskOCGs, fallbackOCG)
+		injectOCGResources(ctx, pageDict, normalXObj, maskXObjs, fallbackXObj, maskOCGs, fallbackOCG)
 		// 3. 重写页面内容
 		rewritePageWithMasks(ctx, pageDict, maskXObjs, fallbackXObj, maskOCGs, fallbackOCG)
 	}
 	//injectOpenActionJS(ctx, opt.StartTime, opt.EndTime)
 
 	fmt.Println("Applying time-limited two-layer protection completed.")
+	// 5. 写出文件
+	// 判断输出文件是否存在，存在则修改文件名
+	if _, err = os.Stat(opt.Output); err == nil {
+		nameExt := opt.Output[len(opt.Output)-4:]
+		randSuffix := time.Now().Unix()
+		opt.Output = fmt.Sprintf("%s_%d%s", opt.Output[:len(opt.Output)-4], randSuffix, nameExt)
+		fmt.Printf("output file exists, changed to %s\n", opt.Output)
+	}
 	return api.WriteContextFile(ctx, opt.Output)
 }

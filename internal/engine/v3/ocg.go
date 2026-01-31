@@ -115,7 +115,7 @@ func rewritePageWithMasks(
 
 	var buf bytes.Buffer
 
-	//buf.WriteString("q\n/NormalContent Do\nQ\n")
+	buf.WriteString("q\n/NormalContent Do\nQ\n")
 
 	for i := range masks {
 		buf.WriteString(fmt.Sprintf(
@@ -145,25 +145,14 @@ func rewritePageWithMasks(
 		return err
 	}
 	// append to existing Contents which currently is a single IndRef from setFallbackContent
-	if c := pageDict["Contents"]; c != nil {
-		switch t := c.(type) {
-		case types.IndirectRef:
-			pageDict["Contents"] = types.Array{t, *ref}
-		case types.Array:
-			pageDict["Contents"] = append(t, *ref)
-		default:
-			return fmt.Errorf("unsupported Contents type when appending Do stream: %T", t)
-		}
-	} else {
-		pageDict["Contents"] = *ref
-	}
-	//pageDict["Contents"] = *ref
+	pageDict["Contents"] = *ref
 	return nil
 }
 
 func injectOCGResources(
 	ctx *model.Context,
 	pageDict types.Dict,
+	normalXObj *types.IndirectRef,
 	masks []*types.IndirectRef,
 	text *types.IndirectRef,
 	maskOCGs []*types.IndirectRef,
@@ -177,10 +166,10 @@ func injectOCGResources(
 		res["XObject"] = xobj
 	}
 
-	//xobj["NormalContent"] = *normal
+	xobj["NormalContent"] = *normalXObj
 
 	for i, m := range masks {
-		xobj[fmt.Sprintf("Mask_%02d", i)] = *m
+		xobj[fmt.Sprintf("Mask_0_%02d", i)] = *m
 	}
 
 	xobj["Text_0"] = *text
@@ -193,4 +182,45 @@ func injectOCGResources(
 	}
 	props["text_0"] = *textOCG
 
+}
+
+func extractPageContentAsXObject(
+	ctx *model.Context,
+	page types.Dict,
+	pageNr int,
+) (*types.IndirectRef, error) {
+
+	contents := page["Contents"]
+	if contents == nil {
+		return nil, fmt.Errorf("page has no contents")
+	}
+
+	// 内容流可能是一个或多个
+	var streams types.Array
+	switch c := contents.(type) {
+	case types.IndirectRef:
+		streams = types.Array{c}
+	case types.Array:
+		streams = c
+	default:
+		return nil, fmt.Errorf("unsupported contents type")
+	}
+	_, _, inhPAttrs, err := ctx.PageDict(pageNr, true)
+	if err != nil {
+		return nil, err
+	}
+	// 创建 Form XObject
+	form := types.Dict{
+		"Type":      types.Name("XObject"),
+		"Subtype":   types.Name("Form"),
+		"Resources": page["Resources"],
+		"BBox":      inhPAttrs.MediaBox.Array(),
+	}
+
+	// 合并内容流
+	form["Contents"] = streams
+
+	formRef, err := ctx.IndRefForNewObject(form)
+
+	return formRef, err
 }
