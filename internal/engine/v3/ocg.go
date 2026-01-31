@@ -32,7 +32,9 @@ func applyOCProperties(
 	ctx.RootDict["OCProperties"] = types.Dict{
 		"OCGs": arr,
 		"D": types.Dict{
-			"ON": arr, // 🔥 默认全部 ON
+			"ON":       arr, // 🔥 默认全部 ON
+			"Order":    arr, // 使阅读器将 OCG 列表显示为图层顺序
+			"ListMode": types.Name("AllOn"),
 		},
 	}
 }
@@ -119,15 +121,14 @@ func rewritePageWithMasks(
 
 	for i := range masks {
 		buf.WriteString(fmt.Sprintf(
-			"/OC %v BDC\n/Mask_%02d Do\nEMC\n",
-			maskOCGs[i],
+			"/OC /mask_0_%02d BDC\n/mask_0_%02d Do\nEMC\n",
+			i,
 			i,
 		))
 	}
 
 	buf.WriteString(fmt.Sprintf(
-		"/OC %v BDC\n/Text_0 Do\nEMC\n",
-		textOCG,
+		"/OC /text_0 BDC\n/text_0 Do\nEMC\n",
 	))
 
 	sd, err := ctx.NewStreamDictForBuf(
@@ -169,10 +170,10 @@ func injectOCGResources(
 	xobj["NormalContent"] = *normalXObj
 
 	for i, m := range masks {
-		xobj[fmt.Sprintf("Mask_0_%02d", i)] = *m
+		xobj[fmt.Sprintf("mask_0_%02d", i)] = *m
 	}
 
-	xobj["Text_0"] = *text
+	xobj["text_0"] = *text
 
 	props := types.Dict{}
 	res["Properties"] = props

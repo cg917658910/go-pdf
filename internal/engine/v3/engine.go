@@ -29,11 +29,11 @@ func Run(opt Options) error {
 	const maskNum = 3
 	// 1. 创建 OCG
 	//normalOCG := createOCG(ctx,"Normal_OCG")
-	fallbackOCG := createOCG(ctx, "Fallback_OCG")
+	fallbackOCG := createOCG(ctx, "text_0")
 	maskOCGs := make([]*types.IndirectRef, maskNum)
 	allOCGs := make([]*types.IndirectRef, 0, maskNum+1)
 	for i := 0; i < maskNum; i++ {
-		maskOCGs[i] = createOCG(ctx, fmt.Sprintf("Mask_0_%02d", i+1))
+		maskOCGs[i] = createOCG(ctx, fmt.Sprintf("mask_0_%02d", i+1))
 	}
 	//allOCGs = append(allOCGs, normalOCG)
 	allOCGs = append(allOCGs, maskOCGs...)
@@ -78,7 +78,7 @@ func Run(opt Options) error {
 		// 3. 重写页面内容
 		rewritePageWithMasks(ctx, pageDict, maskXObjs, fallbackXObj, maskOCGs, fallbackOCG)
 	}
-	//injectOpenActionJS(ctx, opt.StartTime, opt.EndTime)
+	injectOpenActionJS(ctx, opt.StartTime, opt.EndTime, "已过期", "不支持的查看器")
 
 	fmt.Println("Applying time-limited two-layer protection completed.")
 	// 5. 写出文件
