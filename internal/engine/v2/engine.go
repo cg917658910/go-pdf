@@ -26,9 +26,6 @@ func Run(opt Options) error {
 		fmt.Printf("read context file: %v\n", err)
 		return err
 	}
-	/* ctx.RootDict["AcroForm"] = types.Dict{
-		"NeedAppearances": types.Boolean(false),
-	} */
 	// 1. 创建 OCG
 	normalOCG, _ := ensureOCGs(ctx)
 
@@ -62,12 +59,6 @@ func Run(opt Options) error {
 			fmt.Printf("append Do NormalContent for page %d: %v\n", p, err)
 			return err
 		}
-		// 5.创建隐藏 Widget，仅用于兼容或备用（不作显示切换）
-		//createUnlockWidget(ctx, pageDict, p, pxd)
-		/* if err := addFallbackWidget(ctx, pageDict, p, fallbackOCG, opt.Watermark); err != nil {
-			fmt.Printf("add fallback widget to page %d: %v\n", p, err)
-			return err
-		} */
 	}
 
 	// 3. 注入 JS（只隐藏 Widget）

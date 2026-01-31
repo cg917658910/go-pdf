@@ -4,12 +4,12 @@ import (
 	"log"
 	"time"
 
-	eng "pdfguard/internal/engine/v2"
+	eng "pdfguard/internal/engine/v3"
 )
 
 func main() {
 	in := "./cg.pdf"
-	out := "./m2_protected.pdf"
+	out := "./v3_protected.pdf"
 
 	/* ctx, err := api.ReadContextFile(in)
 	if err != nil {
